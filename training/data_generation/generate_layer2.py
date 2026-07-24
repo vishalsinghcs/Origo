@@ -13,6 +13,7 @@ import aiohttp
 import json
 import hashlib
 import os
+import sys
 import argparse
 import random
 from pathlib import Path
@@ -25,21 +26,19 @@ from dataclasses import dataclass, asdict
 # CONFIGURATION — Add your API keys here
 # ═══════════════════════════════════════════════════════════════════════════════
 
-GROQ_KEYS = [
-    "gsk_key_1", "gsk_key_2", "gsk_key_3", "gsk_key_4", "gsk_key_5",
-    "gsk_key_6", "gsk_key_7", "gsk_key_8", "gsk_key_9", "gsk_key_10",
-]
+from dotenv import load_dotenv
 
-SAMBANOVA_KEYS = [
-    "sk-sambanova-1", "sk-sambanova-2", "sk-sambanova-3", "sk-sambanova-4", "sk-sambanova-5",
-    "sk-sambanova-6", "sk-sambanova-7", "sk-sambanova-8", "sk-sambanova-9", "sk-sambanova-10",
-]
+env_path = Path(__file__).resolve().parents[2] / ".env"
+load_dotenv(dotenv_path=env_path)
+
+GROQ_KEYS = [os.getenv(f"GROQ_API_KEY_{i}") for i in range(1, 16+1) if os.getenv(f"GROQ_API_KEY_{i}")]
+if not GROQ_KEYS:
+    print("Error: No GROQ_API_KEY_1...16 found in .env.")
+    sys.exit(1)
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-SAMBANOVA_URL = "https://api.sambanova.ai/v1/chat/completions"
-
-GROQ_MODEL = "llama-3.3-70b-versatile"
-SAMBANOVA_MODEL = "Meta-Llama-3.3-70B-Instruct"
+MODEL_PRIMARY = "llama-3.3-70b-versatile"
+MODEL_SECONDARY = "openai/gpt-oss-120b"
 
 ## is this threat distribution correct and contains all types?
 
@@ -175,53 +174,42 @@ class AsyncLayer2Generator:
     def __init__(
         self,
         groq_keys: list[str],
-        sambanova_keys: list[str],
         groq_url: str = GROQ_URL,
-        sambanova_url: str = SAMBANOVA_URL,
-        groq_model: str = GROQ_MODEL,
-        sambanova_model: str = SAMBANOVA_MODEL,
         max_retries: int = 3,
         timeout: int = 90,
     ):
         self.groq_keys = groq_keys
-        self.sambanova_keys = sambanova_keys
         self.groq_url = groq_url
-        self.sambanova_url = sambanova_url
-        self.groq_model = groq_model
-        self.sambanova_model = sambanova_model
         self.max_retries = max_retries
         self.timeout = timeout
 
         self.groq_idx = 0
-        self.sambanova_idx = 0
         self.lock = asyncio.Lock()
 
         self.groq_semaphore = asyncio.Semaphore(len(groq_keys))
-        self.sambanova_semaphore = asyncio.Semaphore(len(sambanova_keys))
 
-    async def _get_next_key(self, provider: str) -> str:
+    async def _get_next_key(self) -> tuple[str, str, int]:
         async with self.lock:
-            if provider == "groq":
-                key = self.groq_keys[self.groq_idx % len(self.groq_keys)]
-                self.groq_idx += 1
-                return key
+            key_idx = self.groq_idx % len(self.groq_keys)
+            key = self.groq_keys[key_idx]
+            self.groq_idx += 1
+            
+            if key_idx < 8:
+                model = MODEL_PRIMARY
             else:
-                key = self.sambanova_keys[self.sambanova_idx % len(self.sambanova_keys)]
-                self.sambanova_idx += 1
-                return key
+                model = MODEL_SECONDARY
+                
+            return key, model, key_idx
 
     async def _call_api(
         self,
         session: aiohttp.ClientSession,
-        provider: str,
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.85,
-    ) -> dict:
+    ) -> tuple[dict, str]:
         """Make a single API call with retry logic."""
-        key = await self._get_next_key(provider)
-        url = self.groq_url if provider == "groq" else self.sambanova_url
-        model = self.groq_model if provider == "groq" else self.sambanova_model
+        key, model, key_idx = await self._get_next_key()
 
         headers = {
             "Authorization": f"Bearer {key}",
@@ -232,17 +220,17 @@ class AsyncLayer2Generator:
             "model": model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
+                {"role": "user", "content": user_prompt}
             ],
             "temperature": temperature,
-            "max_tokens": 2048,
+            "max_completion_tokens": 2048,
             "response_format": {"type": "json_object"},
         }
 
         for attempt in range(self.max_retries):
             try:
                 async with session.post(
-                    url, headers=headers, json=payload, timeout=self.timeout
+                    self.groq_url, headers=headers, json=payload, timeout=self.timeout
                 ) as response:
                     if response.status == 429:
                         wait = 2 ** attempt + random.uniform(0, 2)
@@ -252,7 +240,8 @@ class AsyncLayer2Generator:
                     response.raise_for_status()
                     data = await response.json()
                     raw_content = data["choices"][0]["message"]["content"]
-                    return json.loads(raw_content)
+                    print(f"Got a sample using api key {key_idx + 1} in attempt {attempt + 1}")
+                    return json.loads(raw_content), model
 
             except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
                 if attempt == self.max_retries - 1:
@@ -270,8 +259,7 @@ class AsyncLayer2Generator:
     ) -> Layer2Sample:
         """Generate one Layer 2 sample with true parallelism."""
 
-        provider = "groq" if sample_idx % 2 == 0 else "sambanova"
-        semaphore = self.groq_semaphore if provider == "groq" else self.sambanova_semaphore
+        semaphore = self.groq_semaphore
 
         system_prompt = REWRITER_SYSTEM_PROMPT.format(
             threat_type=threat_type,
@@ -299,7 +287,7 @@ class AsyncLayer2Generator:
             )
 
         async with semaphore:
-            raw = await self._call_api(session, provider, system_prompt, user_prompt)
+            raw, model_used = await self._call_api(session, system_prompt, user_prompt)
 
         # Parse entities
         entities = []
@@ -324,8 +312,8 @@ class AsyncLayer2Generator:
             entities_detected=entities,
             policy_violated=raw.get("policy_violated", "CONTENT_POLICY"),
             metadata={
-                "provider": provider,
-                "model": self.groq_model if provider == "groq" else self.sambanova_model,
+                "provider": "groq",
+                "model": model_used,
                 "generated_at": datetime.utcnow().isoformat(),
                 "system_prompt_hash": hashlib.sha256(system_prompt.encode()).hexdigest()[:16],
             },
@@ -442,7 +430,6 @@ def main():
 
     generator = AsyncLayer2Generator(
         groq_keys=GROQ_KEYS,
-        sambanova_keys=SAMBANOVA_KEYS,
     )
 
     asyncio.run(generator.generate_batch(
