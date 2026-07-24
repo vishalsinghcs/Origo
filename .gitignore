@@ -1,0 +1,312 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# PYTHON — Bytecode, Virtual Environments, Package Metadata
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Type checker cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Ruff cache
+.ruff_cache/
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DATASETS — Never commit raw data, models, or large files
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Raw synthetic data (can be regenerated, may contain secrets)
+datasets/raw/
+datasets/filtered/
+datasets/processed/
+
+# Evaluation datasets (may contain PII/PHI from benchmarks)
+datasets/evaluation/
+
+# Hugging Face cache (downloaded models, tokenizers)
+~/.cache/huggingface/
+~/.cache/transformers/
+
+# Model weights, checkpoints, adapters (host on HF, not GitHub)
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.onnx
+*.gguf
+*.gguf.*
+
+# Training artifacts
+training/**/checkpoints/
+training/**/outputs/
+training/**/logs/
+training/**/wandb/
+training/**/runs/
+training/**/tensorboard/
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODELS & ARTIFACTS — Large files that belong on Hugging Face
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Downloaded base models (pulled by scripts/download_models.sh)
+models/
+*.model
+tokenizer.json
+tokenizer_config.json
+vocab.json
+merges.txt
+
+# LoRA adapters (upload to HF, don't commit)
+src/origo/models/adapters/
+*.adapter.bin
+*.lora
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOTEBOOKS — Outputs, checkpoints, hidden files
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# Notebook outputs (plots, large tables — regenerate or commit rendered versions)
+notebooks/*.png
+notebooks/*.jpg
+notebooks/*.jpeg
+notebooks/*.pdf
+notebooks/*.csv
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REACT / NODE — Frontend build artifacts and dependencies
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Dependencies
+src/dashboard/node_modules/
+src/dashboard/.pnp
+src/dashboard/.pnp.js
+
+# Build output
+src/dashboard/dist/
+src/dashboard/build/
+src/dashboard/out/
+
+# Local env files
+src/dashboard/.env.local
+src/dashboard/.env.development.local
+src/dashboard/.env.test.local
+src/dashboard/.env.production.local
+
+# Vite cache
+src/dashboard/.vite/
+src/dashboard/.vite-cache/
+
+# TypeScript
+src/dashboard/*.tsbuildinfo
+
+# ESLint cache
+src/dashboard/.eslintcache
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOCS — Built documentation (source stays, output goes)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# React documentation site build output
+docs/documentation/dist/
+docs/documentation/build/
+docs/documentation/.cache/
+docs/documentation/node_modules/
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECRETS & CONFIGURATION — Never commit credentials
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Environment files (copy from .env.example)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# AWS credentials
+.aws/
+*.pem
+*.key
+
+# API keys (in case someone saves them outside .env)
+*api_key*
+*apikey*
+*secret*
+*.secret
+credentials.json
+service_account.json
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.pub
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOCKER — Local volumes and build cache
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Docker Compose local overrides
+docker-compose.override.yml
+
+# Docker volumes (if you mount data locally)
+docker/volumes/
+*.volume
+
+# Build cache
+.docker/
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# IDE & EDITOR — Personal workspace files
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# VS Code
+.vscode/
+*.code-workspace
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OS — System files
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BENCHMARKS — Generated reports and large result files
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Generated charts, tables, PDFs
+benchmarks/reports/
+benchmarks/*.png
+benchmarks/*.jpg
+benchmarks/*.pdf
+benchmarks/*.html
+
+# Large result JSONs (commit summaries, not raw outputs)
+benchmarks/results/*.jsonl
+!benchmarks/results/summary.json
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LOGS & TEMP — Runtime files
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Application logs
+*.log
+logs/
+log/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+
+# PID files
+*.pid
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MISC — Project-specific exclusions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Terraform / Infrastructure (if you add it later)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Local SQLite databases (audit logs during dev)
+*.db
+*.sqlite
+*.sqlite3
