@@ -31,14 +31,15 @@ from dotenv import load_dotenv
 env_path = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-GROQ_KEYS = [os.getenv(f"GROQ_API_KEY_{i}") for i in range(1, 16+1) if os.getenv(f"GROQ_API_KEY_{i}")]
+GROQ_KEYS = [os.getenv(f"GROQ_API_KEY_{i}") for i in range(1, 23+1) if os.getenv(f"GROQ_API_KEY_{i}")]
 if not GROQ_KEYS:
     print("Error: No GROQ_API_KEY_1...16 found in .env.")
     sys.exit(1)
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_PRIMARY = "llama-3.3-70b-versatile"
-MODEL_SECONDARY = "openai/gpt-oss-120b"
+
+MODEL_PRIMARY = "groq/compound"
+MODEL_SECONDARY = "groq/compound"
 
 ## is this threat distribution correct and contains all types?
 
@@ -175,8 +176,8 @@ class AsyncLayer2Generator:
         self,
         groq_keys: list[str],
         groq_url: str = GROQ_URL,
-        max_retries: int = 3,
-        timeout: int = 90,
+        max_retries: int = 15,
+        timeout: int = 120,
     ):
         self.groq_keys = groq_keys
         self.groq_url = groq_url
@@ -233,22 +234,39 @@ class AsyncLayer2Generator:
                     self.groq_url, headers=headers, json=payload, timeout=self.timeout
                 ) as response:
                     if response.status == 429:
-                        wait = 2 ** attempt + random.uniform(0, 2)
+                        try:
+                            err_data = await response.json()
+                            err_msg = err_data.get("error", {}).get("message", "No message provided")
+                        except Exception:
+                            err_msg = await response.text()
+
+                        retry_after = response.headers.get("Retry-After")
+                        if retry_after:
+                            wait = float(retry_after)
+                        else:
+                            wait = 2 ** attempt + random.uniform(1, 3)
+                            
+                        print(f"  [!] 429 Rate Limit on key {key_idx + 1}. Wait {wait:.2f}s (Attempt {attempt + 1}/{self.max_retries}) | Groq Error: {err_msg}")
                         await asyncio.sleep(wait)
                         continue
+
+                    if response.status == 401:
+                        raise RuntimeError(f"API Key {key_idx + 1} is INVALID or UNAUTHORIZED! (401)")
 
                     response.raise_for_status()
                     data = await response.json()
                     raw_content = data["choices"][0]["message"]["content"]
-                    print(f"Got a sample using api key {key_idx + 1} in attempt {attempt + 1}")
+                    print(f"  ✓ Got a sample using api key {key_idx + 1} in attempt {attempt + 1}")
                     return json.loads(raw_content), model
 
             except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
                 if attempt == self.max_retries - 1:
-                    raise RuntimeError(f"Failed after {self.max_retries} attempts: {e}")
-                await asyncio.sleep(2 ** attempt)
+                    raise RuntimeError(f"Failed after {self.max_retries} attempts due to error: {e}")
+                wait = 2 ** attempt + random.uniform(1, 3)
+                print(f"  [!] Error on key {key_idx + 1}: {e}. Retrying in {wait:.2f}s...")
+                await asyncio.sleep(wait)
 
-        raise RuntimeError("Unreachable")
+        raise RuntimeError(f"Failed after {self.max_retries} attempts (Continuous 429 Rate Limits)")
 
     async def generate_single(
         self,
@@ -374,7 +392,7 @@ class AsyncLayer2Generator:
                     generated += 1
 
                     if len(current_chunk) >= chunk_size:
-                        self._write_chunk(output_dir, chunk_num, current_chunk)
+                        chunk_num = self._write_chunk(output_dir, chunk_num, current_chunk)
                         print(f"  ✓ Chunk {chunk_num:03d} written ({len(current_chunk)} samples) | Total: {generated}/{target_total}")
                         current_chunk = []
                         chunk_num += 1
@@ -385,17 +403,22 @@ class AsyncLayer2Generator:
                         print(f"  ✗ Failed sample: {e}")
 
         if current_chunk:
-            self._write_chunk(output_dir, chunk_num, current_chunk)
+            chunk_num = self._write_chunk(output_dir, chunk_num, current_chunk)
             print(f"  ✓ Chunk {chunk_num:03d} written ({len(current_chunk)} samples)")
 
         print(f"\n[Done] Generated: {generated} | Failed: {failed} | Chunks: {chunk_num}")
         self._write_manifest(output_dir, target_total, generated, failed, chunk_num)
 
-    def _write_chunk(self, output_dir: Path, chunk_num: int, samples: list) -> None:
+    def _write_chunk(self, output_dir: Path, chunk_num: int, samples: list) -> int:
         filepath = output_dir / f"part_{chunk_num:04d}.jsonl"
+        while filepath.exists():
+            chunk_num += 1
+            filepath = output_dir / f"part_{chunk_num:04d}.jsonl"
+            
         with open(filepath, "w", encoding="utf-8") as f:
             for sample in samples:
                 f.write(json.dumps(sample, ensure_ascii=False) + "\n")
+        return chunk_num
 
     def _write_manifest(
         self,

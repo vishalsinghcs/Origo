@@ -109,8 +109,8 @@ class AsyncDataGenerator:
         self,
         groq_keys: list[str],
         groq_url: str = GROQ_URL,
-        max_retries: int = 3,
-        timeout: int = 60,
+        max_retries: int = 15,
+        timeout: int = 120,
     ):
         self.groq_keys = groq_keys
         self.groq_url = groq_url
@@ -166,24 +166,45 @@ class AsyncDataGenerator:
         for attempt in range(self.max_retries):
             try:
                 async with session.post(self.groq_url, headers=headers, json=payload, timeout=self.timeout) as response:
+                    err_msg = ""
+                    if response.status != 200:
+                        try:
+                            err_data = await response.json()
+                            err_msg = err_data.get("error", {}).get("message", "No message provided")
+                        except Exception:
+                            err_msg = await response.text()
+
                     if response.status == 429:
-                        # Rate limited — exponential backoff
-                        wait = 2 ** attempt + random.uniform(0, 1)
+                        # Extract detailed error message from Groq
+
+                        # Rate limited — Check for Retry-After header or fallback to exponential backoff
+                        retry_after = response.headers.get("Retry-After")
+                        if retry_after:
+                            wait = float(retry_after)
+                        else:
+                            wait = 2 ** attempt + random.uniform(1, 3)
+                            
+                        print(f"  [!] 429 Rate Limit on key {key_idx + 1}. Wait {wait:.2f}s (Attempt {attempt + 1}/{self.max_retries}) | Groq Error: {err_msg}")
                         await asyncio.sleep(wait)
                         continue
+
+                    if response.status == 401:
+                        raise RuntimeError(f"API Key {key_idx + 1} is INVALID or UNAUTHORIZED! (401) | Groq Error: {err_msg}")
 
                     response.raise_for_status()
                     data = await response.json()
                     raw_content = data["choices"][0]["message"]["content"]
-                    print(f"Got a sample using api key {key_idx + 1} in attempt {attempt + 1}")
+                    print(f"  ✓ Got a sample using api key {key_idx + 1} in attempt {attempt + 1}")
                     return json.loads(raw_content), model
 
             except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
                 if attempt == self.max_retries - 1:
-                    raise RuntimeError(f"Failed after {self.max_retries} attempts: {e}")
-                await asyncio.sleep(2 ** attempt)
+                    raise RuntimeError(f"Failed after {self.max_retries} attempts due to error: {e}")
+                wait = 2 ** attempt + random.uniform(1, 3)
+                print(f"  [!] Error on key {key_idx + 1}: {e}. Retrying in {wait:.2f}s... | Groq Error: {err_msg}")
+                await asyncio.sleep(wait)
 
-        raise RuntimeError("Unreachable")
+        raise RuntimeError(f"Failed after {self.max_retries} attempts (Continuous 429 Rate Limits)")
 
     async def generate_single(
         self,
@@ -290,7 +311,7 @@ class AsyncDataGenerator:
 
                     # Flush chunk when full
                     if len(current_chunk) >= chunk_size:
-                        self._write_chunk(output_dir, chunk_num, current_chunk)
+                        chunk_num = self._write_chunk(output_dir, chunk_num, current_chunk)
                         print(f"  ✓ Chunk {chunk_num:03d} written ({len(current_chunk)} samples) | Total: {generated}/{target_total}")
                         current_chunk = []
                         chunk_num += 1
@@ -302,18 +323,23 @@ class AsyncDataGenerator:
 
         # Flush remaining
         if current_chunk:
-            self._write_chunk(output_dir, chunk_num, current_chunk)
+            chunk_num = self._write_chunk(output_dir, chunk_num, current_chunk)
             print(f"  ✓ Chunk {chunk_num:03d} written ({len(current_chunk)} samples)")
 
         print(f"\n[Done] Generated: {generated} | Failed: {failed} | Chunks: {chunk_num}")
         self._write_manifest(output_dir, target_total, generated, failed, chunk_num)
 
-    def _write_chunk(self, output_dir: Path, chunk_num: int, samples: list) -> None:
-        """Write a chunk to disk immediately."""
+    def _write_chunk(self, output_dir: Path, chunk_num: int, samples: list) -> int:
+        """Write a chunk to disk immediately, avoiding overwrites."""
         filepath = output_dir / f"part_{chunk_num:04d}.jsonl"
+        while filepath.exists():
+            chunk_num += 1
+            filepath = output_dir / f"part_{chunk_num:04d}.jsonl"
+            
         with open(filepath, "w", encoding="utf-8") as f:
             for sample in samples:
                 f.write(json.dumps(sample, ensure_ascii=False) + "\n")
+        return chunk_num
 
     def _write_manifest(
         self,
