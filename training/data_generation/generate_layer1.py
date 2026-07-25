@@ -31,14 +31,14 @@ from dotenv import load_dotenv
 env_path = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-GROQ_KEYS = [os.getenv(f"GROQ_API_KEY_{i}") for i in range(17, 21+1) if os.getenv(f"GROQ_API_KEY_{i}")]
+GROQ_KEYS = [os.getenv(f"GROQ_API_KEY_{i}") for i in range(1, 23+1) if os.getenv(f"GROQ_API_KEY_{i}")]
 if not GROQ_KEYS:
     print("Error: No GROQ_API_KEY_17...21 found in .env.")
     sys.exit(1)
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_PRIMARY = "llama-3.3-70b-versatile"
-MODEL_SECONDARY = "openai/gpt-oss-120b"
+MODEL_PRIMARY = "qwen/qwen3.6-27b"
+MODEL_SECONDARY = "qwen/qwen3.6-27b"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 

@@ -38,8 +38,8 @@ if not GROQ_KEYS:
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-MODEL_PRIMARY = "groq/compound"
-MODEL_SECONDARY = "groq/compound"
+MODEL_PRIMARY = "llama-3.1-8b-instant"
+MODEL_SECONDARY = "llama-3.1-8b-instant"
 
 ## is this threat distribution correct and contains all types?
 

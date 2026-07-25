@@ -85,7 +85,7 @@ datasets/filtered/
 datasets/processed/
 
 # Evaluation datasets (may contain PII/PHI from benchmarks)
-datasets/evaluation/
+datasets/analysis/
 
 # Hugging Face cache (downloaded models, tokenizers)
 ~/.cache/huggingface/

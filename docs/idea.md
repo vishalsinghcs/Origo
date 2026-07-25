@@ -404,7 +404,7 @@ origo/
 │   ├── processed/                    # processed datasets
 │   │   ├── layer1/
 │   │   └── layer2/
-│   └── evaluation/                   # dataset analysis
+│   └── analysis/                   # dataset analysis
 │  
 ├── src/  
 │   ├── origo/                        # Main package  
@@ -539,3 +539,4 @@ origo/
 ```
 
 > Add test yourself section and give code to test our model by any person.
+> make the datasets, models and code freely available.
