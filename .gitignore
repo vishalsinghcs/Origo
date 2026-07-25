@@ -83,6 +83,7 @@ cython_debug/
 datasets/raw/
 datasets/filtered/
 datasets/processed/
+datasets/preprocessed/
 
 # Evaluation datasets (may contain PII/PHI from benchmarks)
 datasets/analysis/
