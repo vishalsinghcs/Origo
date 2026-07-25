@@ -4,8 +4,8 @@ python generate_layer1.py --target 7000 --output ../../datasets/raw/layer1
 python generate_layer2.py --target 10000 --output ../../datasets/raw/layer2
 
 # Step 2: Filter quality samples only
-python ./filters/quality_filter.py --input ../../datasets/raw/layer1 --output ../../datasets/filtered/layer1
-python ./filters/quality_filter.py --input ../../datasets/raw/layer2 --output ../../datasets/filtered/layer2
+python ./filters/quality_filter.py --input ../../datasets/raw/layer1 --output ../../datasets/filtered/layer1/dataset.jsonl
+python ./filters/quality_filter.py --input ../../datasets/raw/layer2 --output ../../datasets/filtered/layer2/dataset.jsonl
 
 # Step 3: Convert to training format
 python convert_layer1.py --input ../../datasets/filtered/layer1 --output ../../datasets/processed/layer1

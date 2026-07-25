@@ -33,6 +33,7 @@ class QualityFilter:
             "rejected_format": 0,
             "rejected_exact_duplicate": 0,
             "rejected_fuzzy_duplicate": 0,
+            "rejected_bad_model": 0,
             "accepted": 0
         }
 
@@ -67,8 +68,14 @@ class QualityFilter:
         if not prompt_text:
             self.stats["rejected_format"] += 1
             return False
+            
+        # 2. Bad Model Check
+        model = record.get("metadata", {}).get("model", "")
+        if model == "openai/gpt-oss-120b":
+            self.stats["rejected_bad_model"] += 1
+            return False
 
-        # 2. Exact Deduplication
+        # 3. Exact Deduplication
         # Use a hash to save memory
         exact_hash = hash(prompt_text.strip().lower())
         if exact_hash in self.seen_exact_hashes:
@@ -84,7 +91,6 @@ class QualityFilter:
                 self.stats["rejected_fuzzy_duplicate"] += 1
                 return False
 
-        # If it passes all checks, accept it
         self.seen_exact_hashes.add(exact_hash)
         self.accepted_ngrams.append(record_ngrams)
         self.stats["accepted"] += 1
@@ -117,27 +123,23 @@ def main():
         print(f"No JSONL files found in {input_path}")
         sys.exit(1)
         
-    # If input is a directory, output must be a directory
-    if input_path.is_dir():
-        output_path.mkdir(parents=True, exist_ok=True)
-    else:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+    # We will combine all input files into a single output file
+    if output_path.is_dir():
+        # If they provided a directory by mistake, default to dataset.jsonl inside it
+        output_path = output_path / "dataset.jsonl"
+        
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     
     qf = QualityFilter(jaccard_threshold=args.threshold)
     
     print(f"Starting filtering process on {len(input_files)} file(s)...")
     print(f"Similarity threshold: {args.threshold}")
+    print(f"Combining all valid samples into single file: {output_path}")
     
-    for file_path in input_files:
-        print(f"Processing {file_path.name}...")
-        
-        # Determine specific output file path
-        if input_path.is_dir():
-            current_out_path = output_path / file_path.name
-        else:
-            current_out_path = output_path
+    with open(output_path, "w", encoding="utf-8") as out_f:
+        for file_path in input_files:
+            print(f"Processing {file_path.name}...")
             
-        with open(current_out_path, "w", encoding="utf-8") as out_f:
             with open(file_path, "r", encoding="utf-8") as in_f:
                 for line in in_f:
                     line = line.strip()
@@ -155,6 +157,8 @@ def main():
     print("\n--- Filtering Complete ---")
     for key, value in qf.stats.items():
         print(f"{key}: {value}")
+        
+    print(f"\n✓ Generated combined dataset at {output_path}")
 
 if __name__ == "__main__":
     main()

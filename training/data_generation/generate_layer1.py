@@ -37,8 +37,8 @@ if not GROQ_KEYS:
     sys.exit(1)
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_PRIMARY = "qwen/qwen3.6-27b"
-MODEL_SECONDARY = "qwen/qwen3.6-27b"
+MODEL_PRIMARY = "llama-3.1-8b-instant"
+MODEL_SECONDARY = "llama-3.1-8b-instant"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 

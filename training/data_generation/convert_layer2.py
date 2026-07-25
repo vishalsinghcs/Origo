@@ -36,7 +36,6 @@ def format_for_training(raw_sample: dict) -> dict:
     subcategory = raw_sample.get("subcategory", "")
     severity = raw_sample.get("severity", "HIGH")
     entities = raw_sample.get("entities_detected", [])
-    policy = raw_sample.get("policy_violated", "")
 
     # Build structured assistant response
     rewritten_text = rewritten if rewritten else "[BLOCKED — Too unsafe to sanitize]"
@@ -49,7 +48,6 @@ def format_for_training(raw_sample: dict) -> dict:
     assistant_text = f"""Security Analysis:
 - Threat Type: {threat_type} ({subcategory})
 - Severity: {severity}
-- Policy Violated: {policy}
 - Confidence: {confidence:.2f}
 - Action: {action}
 
