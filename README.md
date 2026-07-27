@@ -1,6 +1,6 @@
 <div align="center">
   <br />
-  <h1>🛡️ Origo</h1>
+  <h1>Origo</h1>
   <h3>Enterprise AI Security Gateway</h3>
   <p>A multi-layered, offline security proxy that protects confidential information before it reaches any LLM — powered by fine-tuned Small Language Models running on a single GPU.</p>
   <br />
