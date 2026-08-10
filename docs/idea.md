@@ -524,10 +524,7 @@ origo/
 │   ├── development.yaml              # CPU fallback, mock models  
 │   └── policy_rules.yaml             # Block, redact, allow rules  
 │  
-├── notebooks/  
-│   ├── 01_data_exploration.ipynb  
-│   ├── 02_layer1_training.ipynb  
-│   ├── 03_layer2_training.ipynb  
+├── notebooks/    
 │   └── 04_evaluation_analysis.ipynb  
 │  
 ├── docker/  

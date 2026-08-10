@@ -8,6 +8,13 @@ After researching the requirements for training an 8B model with Unsloth (which 
 - **Powerful GPU**: It features the newer Nvidia L4 GPU (24GB VRAM, Ada Lovelace architecture), which trains faster and more efficiently than older generations.
 - **System Stability**: It provides 32GB of system RAM, ensuring your instance doesn't crash when initially loading the 8B model into memory before moving it to the GPU.
 
+### Why Raw EC2 Instead of SageMaker for Training?
+While AWS SageMaker is famous for managed machine learning, we are explicitly avoiding it for the *training* phase for three strategic reasons:
+1. **The "Managed" Tax:** SageMaker charges a significant premium (often 20% to 40% more) on top of the raw hardware cost. Renting the raw EC2 `g6.2xlarge` directly gets you the absolute cheapest price possible.
+2. **Loss of Control:** Unsloth (our training library) requires highly specific, custom-written GPU kernels (Triton) to achieve its speed. SageMaker tries to force you into using their pre-built "Docker Containers" which routinely conflict with Unsloth's strict CUDA and PyTorch requirements. Getting Unsloth to work in a SageMaker automated training job is notoriously difficult.
+3. **Resume Value:** By provisioning a raw Linux EC2 instance, installing Conda, managing Nvidia drivers, and running the training manually via SSH, you demonstrate deep **MLOps Infrastructure skills**. Relying on SageMaker hides all of that under a GUI. 
+*(Note: Using SageMaker Endpoints later for deployment/hosting is still a very valid enterprise choice!)*
+
 ## Proposed Changes (Step-by-Step Workflow)
 
 ### Step 1: Environment Provisioning (AWS GUI & Manual Setup)

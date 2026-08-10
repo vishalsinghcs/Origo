@@ -14,8 +14,8 @@ frontend:
 database:
   audit_logs: PostgreSQL
 infrastructure:
-  deployment: Docker, AWS (EC2 g5.xlarge, S3, SageMaker)
+  deployment: Docker, AWS (EC2 g6.2xlarge, S3, SageMaker)
   orchestration: Docker Compose
 data_engineering:
-  synthetic_generation: Groq (llama-3.3-70b-versatile, openai/gpt-oss-120b)
+  synthetic_generation: Groq (llama-3.3-70b-versatile, llama-3.1-8b-instant)
   quality_filters: N-Gram hashing

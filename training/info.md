@@ -68,3 +68,25 @@ When fine-tuning a small model for classification or extraction, **1,000 perfect
 To ensure bulletproof deployments on AWS EC2 instances, the following robust mechanisms have been hardcoded into the `train.py` scripts:
 
 - **Dynamic Precision Handling:** We import `is_bfloat16_supported()` from Unsloth to automatically toggle between `fp16` and `bf16`. This prevents immediate crashes if the code is moved from an Ada Lovelace L4 (`g6.2xlarge`) down to an older Turing T4 (`g4dn.xlarge`). *(Note: Older GPUs do not support the newer `bf16` format. If we forced `bf16` on them, training would crash, which is why we must fall back to `fp16` on older hardware. However, on newer GPUs like the L4, `bf16` is strongly preferred because its larger dynamic range prevents gradient overflow/underflow issues during fine-tuning.)*
+- **Storage Protection:** `save_total_limit=2` is strictly enforced during checkpointing. Optimizer states (like 8-bit AdamW) can consume gigabytes of space. Limiting total checkpoints ensures you do not accidentally max out the 200GB EBS volume and crash the EC2 instance mid-training.
+- **Modernized API Tracking:** Using the latest Hugging Face TRL arguments (`eval_strategy`) to eliminate misleading deprecation warnings that look like terminal errors.
+- **Model Architecture Consistency:** Layer 2 exclusively targets the text-only `Qwen3-8B-Instruct` (removing the Vision-Language `VL` variant) to ensure native, seamless compatibility with Unsloth's `FastLanguageModel` pipeline without requiring complex vision-tensor configurations.
+
+---
+
+## 🏛️ AWS Infrastructure Choices: EC2 vs. SageMaker vs. Bedrock
+
+For future reference, here is the strategic reasoning behind why the Gateway is trained on raw EC2 instances rather than relying on other famous AWS AI services:
+
+### Why not Amazon Bedrock?
+Bedrock is AWS’s serverless API for accessing massive foundation models (like Claude 3 or Llama 3). 
+- **It's a Black Box:** You cannot deeply fine-tune open-source models using custom, bleeding-edge libraries like Unsloth on Bedrock. 
+- **The Architecture:** Origo is an Enterprise Security Gateway meant to sit *in front* of cloud APIs (to scrub sensitive data before it leaves the company). You cannot host a security scrubber on a cloud API to protect a cloud API.
+- **Cost:** Running millions of tiny, 30-millisecond security classification checks through a paid per-token API would be incredibly expensive. Hosting your own 3B model is practically free once the server is running.
+
+### Why raw EC2 instead of SageMaker (for Training)?
+SageMaker is a managed ML ecosystem, but we bypass it for the training phase because:
+- **Cost Efficiency:** SageMaker adds a 20-40% premium on top of raw EC2 compute costs.
+- **Environment Control:** Unsloth requires precise CUDA, PyTorch, and Triton kernel versions. SageMaker's automated Docker containers often conflict with these strict requirements, making bleeding-edge libraries very hard to run.
+- **MLOps Skill Demonstration:** Provisioning a raw Linux server, managing environments via SSH, and handling raw GPU drivers demonstrates strong engineering capabilities for a resume.
+*(Note: Deploying the final, merged model to a SageMaker Endpoint for production hosting later is still a highly viable option).*
