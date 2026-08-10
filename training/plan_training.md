@@ -47,7 +47,7 @@ We will build the script to fine-tune the 8B parameter model for complex semanti
 
 #### [NEW] [training/layer2_specialist/train.py](file:///c:/Users/Techn/Programming/Projects/Enterprise%20AI%20Gateway/training/layer2_specialist/train.py)
 - **Action**: Create the Unsloth training script for Layer 2.
-- **Details**: Identical pipeline structure to Layer 1, but loads `Qwen/Qwen3-8B-Instruct` and targets the `datasets/formatted/layer2/` data. Saves checkpoints to `training/layer2_specialist/checkpoints/`.
+- **Details**: Identical pipeline structure to Layer 1, but loads `Qwen/Qwen3-8B` and targets the `datasets/formatted/layer2/` data. Saves checkpoints to `training/layer2_specialist/checkpoints/`.
 
 ---
 

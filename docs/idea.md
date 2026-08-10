@@ -183,7 +183,7 @@ Hugging Face is not for hosting application code; it is a specialized cloud stor
 | -------------------- | --------------------------------------------------- |
 | Rule Engine          | Python + Regex + Entropy Detection                  |
 | Semantic Router      | Qwen2.5-3B-instruct model                           |
-| Specialist Guardrail | Qwen3-8B-instruct model                        |
+| Specialist Guardrail | Qwen3-8B model                        |
 | Embedding Model      | bge-large-en-v1.5 or similar                        |
 | Evaluation Judge     | GPT-4.1 / Claude / Gemini                           |
 

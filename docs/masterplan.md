@@ -49,7 +49,7 @@ To train our models (3B and 8B), we require significant GPU VRAM. This phase wil
    - Task: Sequence Classification / SFT.
    - Run the processed Layer 1 ChatML dataset through the HuggingFace `SFTTrainer`.
 3. **Layer 2 (Rewriter)**:
-   - Base Model: `Qwen/Qwen3-8B-Instruct`.
+   - Base Model: `Qwen/Qwen3-8B`.
    - Task: Complex reasoning and entity extraction.
    - Train using the Layer 2 dataset with a focus on strict JSON output adherence.
 4. **Adapter Merging**: Once training converges, export the LoRA weights and merge them back into the base models to create standalone `.gguf` or `Safetensors` artifacts.
