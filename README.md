@@ -61,7 +61,7 @@ Origo distributes the security workload across four specialized layers, each opt
                           ▼
             ┌─────────────────────────────┐
             │  Layer 1: Semantic Router   │
-            │  Qwen2.5-3B (Fine-tuned)   │
+            │  Qwen2.5-3B (Fine-tuned)    │
             │                             │
             │  SAFE │ SUSPICIOUS │ UNSAFE │
             │  + Confidence Score         │
@@ -72,14 +72,14 @@ Origo distributes the security workload across four specialized layers, each opt
                  │                 │
                  │                 ▼
                  │    ┌──────────────────────────┐
-                 │    │  Layer 2: Specialist      │
+                 │    │  Layer 2: Specialist     │
                  │    │  Rewriter (Qwen2.5-8B)   │
                  │    │                          │
                  │    │  • Entity Extraction     │
                  │    │  • Threat Classification │
                  │    │  • Prompt Sanitization   │
                  │    │  • Action Decision       │
-                 │    │    (REDACT/REWRITE/BLOCK) │
+                 │    │    (REDACT/REWRITE/BLOCK)│
                  │    └──────────────────────────┘
                  │                 │
                  └────────┬────────┘

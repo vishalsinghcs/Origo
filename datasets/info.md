@@ -18,10 +18,16 @@ This folder contains the **merged and deduplicated** master datasets.
 - Created by running `filters/quality_filter.py`.
 - The filter scripts iterate over the `raw/` chunks, automatically reject duplicates (via exact and N-gram fuzzy hashing), drop malformed JSONs, remove hallucinations (like broken `openai/gpt-oss-120b` samples), and combine them into a single, high-quality `layer1.jsonl` or `layer2.jsonl` file.
 
-### `datasets/processed/`
-This folder contains the final, training-ready datasets.
+### `datasets/preprocessed/`
+This folder contains the **pristine, manually cleaned** datasets ready for conversion.
+- Created via deep data cleaning using Jupyter Notebooks (`preprocess_layer1.ipynb`, `preprocess_layer2.ipynb`).
+- **Why we need this step**: Teacher LLMs occasionally hallucinate (e.g., outputting raw Markdown, Regex, or JSON inside the `rewritten_prompt` field, or guessing invalid `action` states). We use Pandas to write strict boolean masks to purge these edge cases, ensuring absolutely zero "toxic" formatting leaks into the final fine-tuning data.
+
+### `datasets/formatted/`
+This folder contains the final, training-ready datasets formatted for ChatML.
 - Created by running `convert_layer1.py` and `convert_layer2.py` on the preprocessed datasets.
-- The JSON objects are flattened and transformed into the conversational `ChatML` format required for Unsloth / HuggingFace fine-tuning.
+- The JSON objects are transformed into the conversational `ChatML` format required for Unsloth / HuggingFace fine-tuning. 
+- **Strict JSON Output**: The assistant's responses are explicitly formatted as strict JSON blocks (rather than plaintext) to ensure the trained models output parseable data for the Layer 3 Policy Engine.
 - *Note: We intentionally drop noisy classifications like `policy_violated` during this phase so the 8B models can focus 100% of their attention on reasoning and redaction, delegating strict policy matching to the backend.*
 
 ---

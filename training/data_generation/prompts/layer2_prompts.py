@@ -8,7 +8,23 @@ For each input, you must:
 3. Provide the sanitized prompt (or null if BLOCK)
 4. Explain your reasoning and security analysis
 
-Always respond in the exact structured format specified."""
+Output ONLY a JSON object with this exact structure:
+{
+  "action": "REDACT or REWRITE or BLOCK or ALLOW",
+  "confidence": 0.95,
+  "threat_type": "type of threat",
+  "subcategory": "subcategory of threat",
+  "severity": "HIGH or CRITICAL or NONE",
+  "entities_detected": [
+    {
+      "type": "entity type",
+      "value": "detected value",
+      "redaction": "[REDACTED_TYPE]"
+    }
+  ],
+  "reasoning": "detailed security analysis",
+  "rewritten_prompt": "sanitized prompt or null"
+}"""
 
 REWRITER_SYSTEM_PROMPT = """You are a security-aware prompt rewriter for an enterprise AI gateway.
 Your job: analyze an unsafe or suspicious user prompt, then produce a structured security response. If the prompt is completely safe, treat it as a safe baseline.

@@ -18,7 +18,7 @@ from prompts.layer2_prompts import SPECIALIST_SYSTEM_PROMPT
 
 def load_raw_samples(input_dir: Path) -> Iterator[dict]:
     """Load all raw JSONL files from directory."""
-    for jsonl_file in sorted(input_dir.glob("part_*.jsonl")):
+    for jsonl_file in sorted(input_dir.glob("*.jsonl")):
         with open(jsonl_file, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
@@ -37,28 +37,19 @@ def format_for_training(raw_sample: dict) -> dict:
     severity = raw_sample.get("severity", "HIGH")
     entities = raw_sample.get("entities_detected", [])
 
-    # Build structured assistant response
-    rewritten_text = rewritten if rewritten else "[BLOCKED — Too unsafe to sanitize]"
-
-    entities_text = "\n".join(
-        f"  - {e['type']}: '{e['value']}' → {e['redaction']}"
-        for e in entities
-    ) if entities else "  None detected"
-
-    assistant_text = f"""Security Analysis:
-- Threat Type: {threat_type} ({subcategory})
-- Severity: {severity}
-- Confidence: {confidence:.2f}
-- Action: {action}
-
-Entities Detected:
-{entities_text}
-
-Reasoning:
-{reasoning}
-
-Sanitized Prompt:
-{rewritten_text}"""
+    # Build structured assistant response as JSON
+    assistant_dict = {
+        "action": action,
+        "confidence": confidence,
+        "threat_type": threat_type,
+        "subcategory": subcategory,
+        "severity": severity,
+        "entities_detected": entities,
+        "reasoning": reasoning,
+        "rewritten_prompt": rewritten
+    }
+    
+    assistant_text = json.dumps(assistant_dict, ensure_ascii=False)
 
     return {
         "messages": [
@@ -114,8 +105,8 @@ def write_jsonl(samples: list, filepath: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, default="./layer2_train", help="Raw JSONL input dir")
-    parser.add_argument("--output", type=str, default="./layer2_formatted", help="Formatted output dir")
+    parser.add_argument("--input", type=str, default="../../datasets/preprocessed/layer2", help="Raw JSONL input dir")
+    parser.add_argument("--output", type=str, default="../../datasets/formatted/layer2", help="Formatted output dir")
     parser.add_argument("--train-ratio", type=float, default=0.85)
     parser.add_argument("--val-ratio", type=float, default=0.10)
     args = parser.parse_args()

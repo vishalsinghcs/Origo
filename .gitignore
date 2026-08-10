@@ -82,8 +82,8 @@ cython_debug/
 # Raw synthetic data (can be regenerated, may contain secrets)
 datasets/raw/
 datasets/filtered/
-datasets/processed/
 datasets/preprocessed/
+datasets/formatted/
 
 # Evaluation datasets (may contain PII/PHI from benchmarks)
 datasets/analysis/

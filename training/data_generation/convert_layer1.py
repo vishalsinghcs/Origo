@@ -18,7 +18,7 @@ from prompts.layer1_prompts import ROUTER_SYSTEM_PROMPT
 
 def load_raw_samples(input_dir: Path) -> Iterator[dict]:
     """Load all raw JSONL files from directory."""
-    for jsonl_file in sorted(input_dir.glob("part_*.jsonl")):
+    for jsonl_file in sorted(input_dir.glob("*.jsonl")):
         with open(jsonl_file, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
@@ -31,8 +31,11 @@ def format_for_training(raw_sample: dict) -> dict:
     label = raw_sample["label"]
     reasoning = raw_sample.get("reasoning", "")
 
-    # The assistant should output the label + reasoning
-    assistant_text = f"Classification: {label}\nReasoning: {reasoning}"
+    # The assistant should output the label + reasoning as JSON
+    assistant_text = json.dumps({
+        "label": label,
+        "reasoning": reasoning
+    }, ensure_ascii=False)
 
     return {
         "messages": [
@@ -88,8 +91,8 @@ def write_jsonl(samples: list, filepath: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, default="./layer1_train", help="Raw JSONL input dir")
-    parser.add_argument("--output", type=str, default="./layer1_formatted", help="Formatted output dir")
+    parser.add_argument("--input", type=str, default="../../datasets/preprocessed/layer1", help="Raw JSONL input dir")
+    parser.add_argument("--output", type=str, default="../../datasets/formatted/layer1", help="Formatted output dir")
     parser.add_argument("--train-ratio", type=float, default=0.85)
     parser.add_argument("--val-ratio", type=float, default=0.10)
     args = parser.parse_args()

@@ -401,10 +401,13 @@ origo/
 │   ├── filtered/                     # filtered datasets
 │   │   ├── layer1/
 │   │   └── layer2/
-│   ├── processed/                    # processed datasets
+│   ├── preprocessed/                 # preprocessed datasets
 │   │   ├── layer1/
 │   │   └── layer2/
-│   └── analysis/                   # dataset analysis
+│   ├── formatted/                    # final formatted datasets for training
+│   │   ├── layer1/
+│   │   └── layer2/
+│   └── analysis/                     # dataset analysis
 │  
 ├── src/  
 │   ├── origo/                        # Main package  
