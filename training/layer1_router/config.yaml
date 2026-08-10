@@ -1,0 +1,38 @@
+model:
+  name: "Qwen/Qwen2.5-3B-Instruct"
+  max_seq_length: 2048
+  dtype: "bfloat16"
+  load_in_4bit: true
+
+lora:
+  r: 64
+  lora_alpha: 128
+  lora_dropout: 0.05
+  bias: "none"
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+training:
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 16
+  warmup_ratio: 0.05
+  num_train_epochs: 3
+  learning_rate: 0.0002
+  fp16: false
+  bf16: true
+  logging_steps: 10
+  optim: "adamw_8bit"
+  weight_decay: 0.01
+  lr_scheduler_type: "cosine"
+  seed: 42
+  output_dir: "checkpoints"
+
+data:
+  train_path: "../../datasets/formatted/layer1/train.jsonl"
+  val_path: "../../datasets/formatted/layer1/val.jsonl"
