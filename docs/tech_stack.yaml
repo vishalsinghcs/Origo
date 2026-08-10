@@ -6,7 +6,7 @@ backend:
   training: Unsloth, TRL, HuggingFace
   models:
     layer1: Qwen2.5-3B-Instruct (Fine-tuned LoRA)
-    layer2: Qwen2.5-VL-8B-Instruct (Fine-tuned LoRA)
+    layer2: Qwen3-8B-Instruct (Fine-tuned LoRA)
 frontend:
   language: TypeScript
   framework: React (Vite)

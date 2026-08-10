@@ -33,7 +33,7 @@ Since enterprise security data (real PII, real credentials, real attacks) is hig
 
 ---
 
-### Layer 2 Specialist Prompt Transformer (`Qwen2.5-VL-8B-Instruct`)
+### Layer 2 Specialist Prompt Transformer (`Qwen3-8B`)
 
 - **Target Size:** 10,000 high-quality instruction pairs
 - **The Goal:** Perform complex reasoning, trace out where threats are, extract specific entities (using Strict Enums), and output a sanitized JSON string.
@@ -60,3 +60,11 @@ When fine-tuning a small model for classification or extraction, **1,000 perfect
 - **Deduplication is Key:** The `quality_filter.py` script ensures identical or near-identical prompts (using N-Grams) are removed. If the model sees the same prompt structure 100 times, it will overfit and stall.
 - **Enforced Enums:** Our generation scripts force the teacher models to label entities with strict Enums (e.g., `CREDIT_CARD`, `SSN`) rather than inventing their own labels, ensuring clean downstream training.
 - **Maximize Formatting Diversity:** We vary the input structures across Markdown, JSON inputs, Python code, and raw text to ensure the model adapts cleanly to anything an enterprise user pastes into it.
+
+---
+
+## 🚀 Recent EC2 & Training Optimizations
+
+To ensure bulletproof deployments on AWS EC2 instances, the following robust mechanisms have been hardcoded into the `train.py` scripts:
+
+- **Dynamic Precision Handling:** We import `is_bfloat16_supported()` from Unsloth to automatically toggle between `fp16` and `bf16`. This prevents immediate crashes if the code is moved from an Ada Lovelace L4 (`g6.2xlarge`) down to an older Turing T4 (`g4dn.xlarge`). *(Note: Older GPUs do not support the newer `bf16` format. If we forced `bf16` on them, training would crash, which is why we must fall back to `fp16` on older hardware. However, on newer GPUs like the L4, `bf16` is strongly preferred because its larger dynamic range prevents gradient overflow/underflow issues during fine-tuning.)*

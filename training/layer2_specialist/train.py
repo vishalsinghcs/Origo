@@ -7,6 +7,7 @@ from unsloth import FastLanguageModel
 from unsloth.chat_templates import get_chat_template
 from trl import SFTTrainer
 from transformers import TrainingArguments
+from unsloth import is_bfloat16_supported
 
 def load_config():
     with open("config.yaml", "r") as f:
@@ -69,16 +70,18 @@ def main():
         warmup_ratio=config['training']['warmup_ratio'],
         num_train_epochs=config['training']['num_train_epochs'],
         learning_rate=config['training']['learning_rate'],
-        fp16=config['training']['fp16'],
-        bf16=config['training']['bf16'],
+        fp16=not is_bfloat16_supported(),
+        bf16=is_bfloat16_supported(),
         logging_steps=config['training']['logging_steps'],
         optim=config['training']['optim'],
         weight_decay=config['training']['weight_decay'],
         lr_scheduler_type=config['training']['lr_scheduler_type'],
         seed=config['training']['seed'],
         output_dir=config['training']['output_dir'],
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="epoch",
+        save_total_limit=2,
+        load_best_model_at_end=False,
         report_to="none" # Switch to 'wandb' if using weights & biases
     )
     

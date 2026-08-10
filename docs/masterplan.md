@@ -10,7 +10,7 @@ Origo operates as a multi-layered security proxy sitting between enterprise user
 
 1. **Layer 0 (Heuristics):** High-speed regex and entropy scanning for obvious threats (credit cards, standard API keys).
 2. **Layer 1 (Semantic Router):** A fine-tuned Qwen2.5-3B model that classifies prompts as `SAFE`, `SUSPICIOUS`, or `UNSAFE` in milliseconds.
-3. **Layer 2 (Specialist Rewriter):** A fine-tuned Qwen2.5-VL-8B model that deeply analyzes `SUSPICIOUS` prompts, extracts sensitive entities, and rewrites the prompt to safely redact data or neutralize injection attacks.
+3. **Layer 2 (Specialist Rewriter):** A fine-tuned Qwen3-8B model that deeply analyzes `SUSPICIOUS` prompts, extracts sensitive entities, and rewrites the prompt to safely redact data or neutralize injection attacks.
 4. **Layer 3 (Policy Engine):** A deterministic rule engine that applies company-specific thresholds (e.g., "Block all PII regardless of context") to Layer 2's output.
 
 ---
@@ -49,7 +49,7 @@ To train our models (3B and 8B), we require significant GPU VRAM. This phase wil
    - Task: Sequence Classification / SFT.
    - Run the processed Layer 1 ChatML dataset through the HuggingFace `SFTTrainer`.
 3. **Layer 2 (Rewriter)**:
-   - Base Model: `Qwen/Qwen2.5-VL-8B-Instruct` (or standard 8B).
+   - Base Model: `Qwen/Qwen3-8B-Instruct`.
    - Task: Complex reasoning and entity extraction.
    - Train using the Layer 2 dataset with a focus on strict JSON output adherence.
 4. **Adapter Merging**: Once training converges, export the LoRA weights and merge them back into the base models to create standalone `.gguf` or `Safetensors` artifacts.

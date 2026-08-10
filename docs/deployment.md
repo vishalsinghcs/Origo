@@ -12,11 +12,16 @@ We are targeting a **`g6.2xlarge`** instance, which utilizes the Nvidia L4 GPU (
 2. **Launch Instance**: Click the orange **Launch instance** button.
 3. **Name your Server**: Under *Name and tags*, enter `Origo-Training-Server`.
 4. **Choose the AMI (Operating System)**: 
-   - Under *Application and OS Images*, search for: `Deep Learning Base OSS Nvidia Driver AMI (Ubuntu 22.04)`.
+   - Under *Application and OS Images*, search for: `Deep Learning Base OSS Nvidia Driver AMI (Ubuntu 22.04)`, it will be available in community.
    - *Why?* This AMI comes pre-loaded with the exact Nvidia drivers required for AI workloads, saving you from complex kernel installations.
 5. **Select Instance Type**:
    - Under *Instance type*, search for and select **`g6.2xlarge`**. 
-   - *(Note: If it gives you a vCPU limit error, you may need to click "Request quota increase" for G instances in your AWS Service Quotas).*
+   - **Handling vCPU Quota Errors**: If you get a "vCPU limit of 0" error, your account needs permission to run GPU instances.
+     1. Open a new tab and search for **Service Quotas** in the top AWS search bar.
+     2. Click **AWS services** on the left, then click **Amazon Elastic Compute Cloud (Amazon EC2)**.
+     3. Search for the quota named **Running On-Demand G and VT instances**.
+     4. Select it, click **Request quota increase**, and request a value of **`8`** (which covers the 8 vCPUs needed for a `g6.2xlarge`). 
+     *(Note: Approval can take from a few minutes to 24 hours. If denied, reply to the support ticket explaining you are a developer fine-tuning an AI model).*
 6. **Create a Key Pair (Crucial for Access)**:
    - Click **Create new key pair**.
    - Name it `origo-key`.
@@ -26,7 +31,8 @@ We are targeting a **`g6.2xlarge`** instance, which utilizes the Nvidia L4 GPU (
    - Under *Network settings*, check the box for **Allow SSH traffic from**.
    - Set it to **My IP** (most secure) or **Anywhere (0.0.0.0/0)**.
 8. **Configure Storage**:
-   - Under *Configure storage*, change the root volume size to **`200` GB**. Leave the type as `gp3`. (Models and datasets take up massive amounts of space).
+   - Under *Configure storage*, change the root volume size to **`200` GB**. Leave the type as `gp3`. 
+   - *Why 200GB?* Even though models are loaded in 4-bit (quantized) and datasets might be small, HuggingFace initially caches the unquantized 16-bit weights (taking ~25GB). Furthermore, Ubuntu, CUDA, and Miniconda environments consume ~20GB. Finally, saving multiple training checkpoints (which include optimizer states) and merging LoRA adapters requires duplicating model footprints on disk. Running out of storage will immediately crash your training job. At ~$0.08/GB, this 200GB buffer acts as a very cheap safety net.
 9. **Launch**: Click the orange **Launch instance** button on the bottom right. 
 
 ---
@@ -35,11 +41,17 @@ We are targeting a **`g6.2xlarge`** instance, which utilizes the Nvidia L4 GPU (
 
 1. Open your terminal (PowerShell or Windows Terminal).
 2. Navigate to the folder where your `origo-key.pem` was downloaded (usually `Downloads`).
-3. Connect using SSH. Replace `<YOUR-EC2-PUBLIC-IP>` with the public IPv4 address found on your EC2 Dashboard:
+3. **Crucial Windows Step (Fixing Key Permissions):** SSH on Windows will reject your key with a "WARNING: UNPROTECTED PRIVATE KEY FILE!" error if the file permissions are too open. Run these exact commands in PowerShell to lock down the key so only your user account can read it:
+   ```powershell
+   icacls.exe origo-key.pem /reset
+   icacls.exe origo-key.pem /grant:r "$($env:USERNAME):(R)"
+   icacls.exe origo-key.pem /inheritance:r
+   ```
+4. Connect using SSH. Replace `<YOUR-EC2-PUBLIC-IP>` with the public IPv4 address found on your EC2 Dashboard:
    ```bash
    ssh -i origo-key.pem ubuntu@<YOUR-EC2-PUBLIC-IP>
    ```
-4. Type `yes` when prompted to accept the fingerprint.
+5. Type `yes` when prompted to accept the fingerprint.
 
 ---
 
@@ -60,8 +72,12 @@ conda init bash
 *Close your SSH terminal and reconnect to apply the conda initialization.*
 
 ### 2. Create the Training Environment
-Create an environment specifically built for PyTorch and Unsloth.
+Create an environment specifically built for PyTorch and Unsloth. 
+*(Note: Anaconda recently introduced a prompt requiring users to accept their Terms of Service for free/personal use before creating environments).*
 ```bash
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
 conda create -n origo-train python=3.11 -y
 conda activate origo-train
 ```
@@ -86,7 +102,7 @@ pip install wandb pandas pyyaml
 ### 5. HuggingFace Login
 You need to authenticate to download models and push your final LoRA adapters.
 ```bash
-huggingface-cli login
+hf auth login
 ```
 *Paste your HuggingFace token (must have Write access) when prompted.*
 

@@ -7,7 +7,7 @@
 
   [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB.svg?logo=python&logoColor=white)](#tech-stack)
   [![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg?logo=fastapi&logoColor=white)](#tech-stack)
-  [![Qwen2.5](https://img.shields.io/badge/Qwen2.5-3B%20%7C%208B-7C3AED.svg)](#architecture)
+  [![Qwen](https://img.shields.io/badge/Qwen--3B%20%7C%20Qwen3--8B-7C3AED.svg)](#architecture)
   [![Unsloth](https://img.shields.io/badge/Unsloth-QLoRA-EF4444.svg)](#fine-tuning)
   [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg?logo=docker&logoColor=white)](#deployment)
   [![AWS](https://img.shields.io/badge/AWS-EC2%20%7C%20SageMaker%20%7C%20RDS-FF9900.svg?logo=amazonaws&logoColor=white)](#deployment)
@@ -73,7 +73,7 @@ Origo distributes the security workload across four specialized layers, each opt
                  │                 ▼
                  │    ┌──────────────────────────┐
                  │    │  Layer 2: Specialist     │
-                 │    │  Rewriter (Qwen2.5-8B)   │
+                 │    │  Rewriter (Qwen3-8B)     │
                  │    │                          │
                  │    │  • Entity Extraction     │
                  │    │  • Threat Classification │
@@ -179,7 +179,7 @@ A summary of the deeper engineering decisions and optimizations applied across t
 | **Language** | Python 3.11+ |
 | **Backend Framework** | FastAPI, Uvicorn |
 | **Layer 1 Model** | Qwen2.5-3B-Instruct (Fine-tuned QLoRA) |
-| **Layer 2 Model** | Qwen2.5-8B-Instruct (Fine-tuned QLoRA) |
+| **Layer 2 Model** | Qwen3-8B-Instruct (Fine-tuned QLoRA) |
 | **Training Library** | Unsloth, TRL, HuggingFace Transformers |
 | **Inference Engine** | vLLM / llama.cpp |
 | **Data Engineering** | Pandas, Plotly, Streamlit, Jupyter |

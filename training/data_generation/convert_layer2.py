@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Layer 2 Dataset Converter — Raw JSONL → Unsloth/TRL Training Format
-Converts generated synthetic data into chat-template format for Qwen2.5-8B fine-tuning.
+Converts generated synthetic data into chat-template format for Qwen3-8B fine-tuning.
 
 Usage:
     python convert_layer2.py --input ./layer2_train --output ./layer2_formatted
