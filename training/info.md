@@ -53,7 +53,7 @@ Since enterprise security data (real PII, real credentials, real attacks) is hig
 
 ---
 
-## 💡 The Golden Rule of Fine-Tuning: Quality > Quantity
+## The Golden Rule of Fine-Tuning: Quality > Quantity
 
 When fine-tuning a small model for classification or extraction, **1,000 perfectly curated examples will beat 20,000 noisy, duplicated internet records every single time.**
 
@@ -63,7 +63,7 @@ When fine-tuning a small model for classification or extraction, **1,000 perfect
 
 ---
 
-## 🚀 Recent EC2 & Training Optimizations
+## Recent EC2 & Training Optimizations
 
 To ensure bulletproof deployments on AWS EC2 instances, the following robust mechanisms have been hardcoded into the `train.py` scripts:
 
@@ -74,7 +74,7 @@ To ensure bulletproof deployments on AWS EC2 instances, the following robust mec
 
 ---
 
-## 🏛️ AWS Infrastructure Choices: EC2 vs. SageMaker vs. Bedrock
+## AWS Infrastructure Choices: EC2 vs. SageMaker vs. Bedrock
 
 For future reference, here is the strategic reasoning behind why the Gateway is trained on raw EC2 instances rather than relying on other famous AWS AI services:
 
@@ -90,3 +90,27 @@ SageMaker is a managed ML ecosystem, but we bypass it for the training phase bec
 - **Environment Control:** Unsloth requires precise CUDA, PyTorch, and Triton kernel versions. SageMaker's automated Docker containers often conflict with these strict requirements, making bleeding-edge libraries very hard to run.
 - **MLOps Skill Demonstration:** Provisioning a raw Linux server, managing environments via SSH, and handling raw GPU drivers demonstrates strong engineering capabilities for a resume.
 *(Note: Deploying the final, merged model to a SageMaker Endpoint for production hosting later is still a highly viable option).*
+
+---
+
+## Overcoming Dependency Hell (Lessons Learned)
+
+During the AWS EC2 setup phase, we encountered one of the most notorious challenges in modern MLOps: **dependency hell** between PyTorch, Conda, Pip, Xformers, and bleeding-edge HuggingFace libraries. 
+
+Here is a summary of the critical lessons learned and how we ultimately solved it, which will be invaluable for future AI infrastructure debugging:
+
+### 1. The Conda vs. Pip War (The MKL Bug)
+When you run `conda install pytorch`, Conda attempts to manage all C++ bindings globally. On Linux, this frequently pulls in Intel's `mkl` library. We discovered that a specific version of this library (`mkl 2024.1`) contains a fatally broken symbol (`iJIT_NotifyEvent`) that causes PyTorch to crash immediately. 
+- **The Lesson:** Relying blindly on Conda's environment solver for deep learning can sometimes trap you in broken upstream C++ dependencies.
+
+### 2. The Bleeding-Edge Bug (`torch.int1`)
+When we tried to switch completely to `pip` to avoid Conda's MKL bug, a completely different issue arose. HuggingFace libraries (like `transformers` and `unsloth-zoo`) automatically pulled in the newest version of `torchao`. This new version expected PyTorch 2.6+ (which introduces the new `torch.int1` datatype). However, our environment had locked PyTorch to version 2.5 to satisfy the strict requirements of `xformers`. Because `torch.int1` didn't exist in PyTorch 2.5, the entire stack crashed.
+- **The Lesson:** In AI, you cannot just indiscriminately run `pip install --upgrade`. "Latest" does not mean "best." The PyTorch ecosystem is highly fragile; a single sub-dependency updating itself can break the entire stack if it expects a newer PyTorch core.
+
+### 3. The Ultimate Solution (The "Golden Setup")
+To completely break the cycle of dependency conflicts, we established a strict, manually-controlled installation order:
+1. **Force the Base Framework:** We explicitly forced pip to download the PyTorch 2.6.0 wheel compiled for CUDA 12.4 (`--index-url https://download.pytorch.org/whl/cu124`). This bypassed Conda entirely and guaranteed we had the newest `torch.int1` support.
+2. **Quarantine the Installs:** We used the `--no-deps` flag aggressively when installing Unsloth, `trl`, and `xformers`. This prevented pip from "helpfully" uninstalling our perfect PyTorch build or pulling in conflicting sub-libraries.
+3. **Nuke Known Troublemakers:** We proactively ran `pip uninstall torchao -y` to completely remove the library causing the crashes, knowing that Unsloth relies on `bitsandbytes` instead.
+
+**Takeaway for the Future:** When building AI infrastructure, always explicitly pin your PyTorch version and CUDA wheel URL. Never let a secondary package (like `xformers` or `unsloth`) dictate or accidentally overwrite your core PyTorch installation!
